@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bmf:BusinessModel xmlns:bmf="http://www.nccloud.com/bmf"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.nccloud.com/bmf bmf.xsd">
+
+    <businessEntity name="aim.deicingtrace" displayName="外运轨迹"
+        className="nccloud.web.aim.deicing.vo.TransportTraceVO"
+        tableName="aim_deicing_trace">
+
+        <attributes>
+            <attribute name="pk_transport_trace" displayName="主键" dataType="String" length="36" isPrimaryKey="true"/>
+            <attribute name="pk_transport_bill" displayName="外运联单" dataType="String" length="36" isRequired="true"/>
+            <attribute name="pk_deicing_record" displayName="除冰记录" dataType="String" length="36"/>
+            <attribute name="trace_node" displayName="轨迹节点" dataType="String" length="100" isRequired="true"/>
+            <attribute name="trace_order" displayName="轨迹顺序" dataType="Integer"/>
+            <attribute name="operate_time" displayName="操作时间" dataType="UFDateTime" isRequired="true"/>
+            <attribute name="operator" displayName="操作人" dataType="String" length="36"/>
+            <attribute name="trace_status" displayName="轨迹状态" dataType="String" length="50"/>
+            <attribute name="trace_remark" displayName="轨迹备注" dataType="String" length="500"/>
+            <attribute name="location" displayName="当前位置" dataType="String" length="200"/>
+            <attribute name="pk_group" displayName="集团" dataType="String" length="36"/>
+            <attribute name="pk_org" displayName="组织" dataType="String" length="36"/>
+            <attribute name="creator" displayName="创建人" dataType="String" length="36"/>
+            <attribute name="creationtime" displayName="创建时间" dataType="UFDateTime"/>
+            <attribute name="modifier" displayName="修改人" dataType="String" length="36"/>
+            <attribute name="modifiedtime" displayName="修改时间" dataType="UFDateTime"/>
+            <attribute name="dr" displayName="删除标记" dataType="Integer"/>
+            <attribute name="ts" displayName="时间戳" dataType="UFDateTime"/>
+        </attributes>
+    </businessEntity>
+</bmf:BusinessModel>

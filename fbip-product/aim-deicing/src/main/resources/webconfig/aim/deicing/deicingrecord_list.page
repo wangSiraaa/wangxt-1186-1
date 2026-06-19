@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<page xmlns="http://www.nccloud.com/page"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.nccloud.com/page page.xsd"
+    pagecode="aim_deicing_deicingrecord_list"
+    title="除冰液回收处置列表"
+    component="list"
+    entity="aim.deicingrecord">
+
+    <header>
+        <toolbar>
+            <button id="add" label="新增" icon="icon-add" action="aim.deicing.saveDeicingRecord" type="primary"/>
+            <button id="edit" label="修改" icon="icon-edit" action="aim.deicing.updateDeicingRecord" type="default"/>
+            <button id="delete" label="删除" icon="icon-delete" action="aim.deicing.deleteDeicingRecord" type="danger"/>
+            <button id="query" label="查询" icon="icon-search" action="aim.deicing.listDeicingRecord" type="default"/>
+            <button id="test" label="浓度检测" icon="icon-check" action="aim.deicing.saveConcentrationTest" type="warning"/>
+            <button id="confirm" label="联单确认" icon="icon-confirm" action="aim.deicing.confirmTransportBill" type="success"/>
+            <button id="trace" label="轨迹查询" icon="icon-history" action="aim.deicing.queryTransportTrace" type="info"/>
+        </toolbar>
+
+        <searchArea>
+            <field name="deicing_date" label="除冰日期" uitype="date" operator="range"/>
+            <field name="flight_no" label="航班号" uitype="string" operator="like"/>
+            <field name="flight_sortie" label="航班架次" uitype="string" operator="like"/>
+            <field name="is_recycled" label="是否回收" uitype="select" operator="="/>
+            <field name="record_status" label="记录状态" uitype="select" operator="="/>
+            <field name="pk_recycling_pool" label="回收池" uitype="refer" refcode="aim_deicing_pool" operator="="/>
+        </searchArea>
+    </header>
+
+    <body>
+        <grid id="listGrid" entity="aim.deicingrecord">
+            <columns>
+                <column name="bill_no" label="单据编号" width="120" frozen="left"/>
+                <column name="deicing_date" label="除冰日期" width="100"/>
+                <column name="flight_no" label="航班号" width="100"/>
+                <column name="flight_sortie" label="航班架次" width="120"/>
+                <column name="aircraft_type" label="机型" width="100"/>
+                <column name="aircraft_reg_no" label="注册号" width="100"/>
+                <column name="is_recycled" label="是否回收" width="80" render="enum">
+                    <enumMap>
+                        <entry key="1" value="是" color="green"/>
+                        <entry key="0" value="否" color="red"/>
+                    </enumMap>
+                </column>
+                <column name="recycled_volume" label="回收量(L)" width="100" align="right"/>
+                <column name="unrecycled_reason" label="未回收原因" width="150" showOverflowTooltip="true"/>
+                <column name="pk_recycling_pool" label="回收池" width="120" render="refer" refcode="aim_deicing_pool"/>
+                <column name="pool_code" label="回收池编码" width="100"/>
+                <column name="record_status" label="记录状态" width="100" render="enum">
+                    <enumMap>
+                        <entry key="0" value="待检测" color="orange"/>
+                        <entry key="1" value="检测合格" color="green"/>
+                        <entry key="2" value="检测超限" color="red"/>
+                        <entry key="3" value="已转运" color="blue"/>
+                    </enumMap>
+                </column>
+                <column name="bill_status" label="联单状态" width="100" render="enum">
+                    <enumMap>
+                        <entry key="0" value="待确认" color="orange"/>
+                        <entry key="1" value="已确认" color="green"/>
+                        <entry key="2" value="已转运" color="blue"/>
+                        <entry key="3" value="已处置" color="purple"/>
+                    </enumMap>
+                </column>
+                <column name="creator" label="创建人" width="80" render="user"/>
+                <column name="creationtime" label="创建时间" width="150"/>
+            </columns>
+        </grid>
+    </body>
+
+    <sidePanel title="回收池实时库存">
+        <grid id="poolGrid" entity="aim.deicingpool" action="aim.deicing.queryRecyclingPool">
+            <columns>
+                <column name="pool_code" label="回收池编码" width="100"/>
+                <column name="pool_name" label="回收池名称" width="120"/>
+                <column name="location" label="位置" width="120"/>
+                <column name="design_capacity" label="设计容量(m³)" width="120" align="right"/>
+                <column name="current_stock" label="当前存量(m³)" width="120" align="right" render="progress">
+                    <progressField refField="design_capacity"/>
+                </column>
+                <column name="pool_status" label="状态" width="60" render="enum">
+                    <enumMap>
+                        <entry key="1" value="启用" color="green"/>
+                        <entry key="0" value="停用" color="gray"/>
+                    </enumMap>
+                </column>
+            </columns>
+        </grid>
+    </sidePanel>
+</page>

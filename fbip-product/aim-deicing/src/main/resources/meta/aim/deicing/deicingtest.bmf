@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bmf:BusinessModel xmlns:bmf="http://www.nccloud.com/bmf"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.nccloud.com/bmf bmf.xsd">
+
+    <businessEntity name="aim.deicingtest" displayName="浓度检测记录"
+        className="nccloud.web.aim.deicing.vo.ConcentrationTestVO"
+        tableName="aim_deicing_test">
+
+        <attributes>
+            <attribute name="pk_concentration_test" displayName="主键" dataType="String" length="36" isPrimaryKey="true"/>
+            <attribute name="pk_deicing_record" displayName="除冰记录" dataType="String" length="36" isRequired="true"/>
+            <attribute name="test_no" displayName="检测单号" dataType="String" length="50"/>
+            <attribute name="test_time" displayName="检测时间" dataType="UFDateTime" isRequired="true"/>
+            <attribute name="tester" displayName="检测人(环保员)" dataType="String" length="36" isRequired="true"/>
+            <attribute name="concentration_value" displayName="浓度值(mg/L)" dataType="UFDouble" precision="20" scale="4" isRequired="true"/>
+            <attribute name="is_over_limit" displayName="是否超限" dataType="Integer">
+                <enumValues>
+                    <enumValue value="1" displayName="是"/>
+                    <enumValue value="0" displayName="否"/>
+                </enumValues>
+            </attribute>
+            <attribute name="test_result" displayName="检测结果" dataType="String" length="200"/>
+            <attribute name="test_method" displayName="检测方法" dataType="String" length="100"/>
+            <attribute name="sample_point" displayName="采样点" dataType="String" length="100"/>
+            <attribute name="remark" displayName="备注" dataType="String" length="500"/>
+            <attribute name="pk_group" displayName="集团" dataType="String" length="36"/>
+            <attribute name="pk_org" displayName="组织" dataType="String" length="36"/>
+            <attribute name="creator" displayName="创建人" dataType="String" length="36"/>
+            <attribute name="creationtime" displayName="创建时间" dataType="UFDateTime"/>
+            <attribute name="modifier" displayName="修改人" dataType="String" length="36"/>
+            <attribute name="modifiedtime" displayName="修改时间" dataType="UFDateTime"/>
+            <attribute name="dr" displayName="删除标记" dataType="Integer"/>
+            <attribute name="ts" displayName="时间戳" dataType="UFDateTime"/>
+        </attributes>
+    </businessEntity>
+</bmf:BusinessModel>

@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<page xmlns="http://www.nccloud.com/page"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.nccloud.com/page page.xsd"
+    pagecode="aim_deicing_deicingrecord_card"
+    title="除冰液回收处置卡片"
+    component="card"
+    entity="aim.deicingrecord">
+
+    <header>
+        <toolbar>
+            <button id="save" label="保存" icon="icon-save" action="aim.deicing.saveDeicingRecord" type="primary"/>
+            <button id="update" label="修改" icon="icon-edit" action="aim.deicing.updateDeicingRecord" type="default"/>
+            <button id="delete" label="删除" icon="icon-delete" action="aim.deicing.deleteDeicingRecord" type="danger"/>
+            <button id="back" label="返回" icon="icon-back" action="backToList" type="default"/>
+        </toolbar>
+    </header>
+
+    <body>
+        <form id="headForm" entity="aim.deicingrecord" title="除冰作业登记">
+            <fieldGroups>
+                <fieldGroup title="航班信息" columns="4">
+                    <field name="bill_no" label="单据编号" uitype="string" disabled="true"/>
+                    <field name="deicing_date" label="除冰日期" uitype="date" required="true"/>
+                    <field name="flight_no" label="航班号" uitype="string" required="true"/>
+                    <field name="flight_sortie" label="航班架次" uitype="string" required="true"/>
+                    <field name="aircraft_type" label="机型" uitype="string"/>
+                    <field name="aircraft_reg_no" label="飞机注册号" uitype="string"/>
+                    <field name="pk_apron" label="机坪" uitype="refer" refcode="bd_apron"/>
+                    <field name="apron_operator" label="机坪作业人员" uitype="refer" refcode="user"/>
+                </fieldGroup>
+
+                <fieldGroup title="除冰作业信息" columns="4">
+                    <field name="deicing_start_time" label="除冰开始时间" uitype="datetime"/>
+                    <field name="deicing_end_time" label="除冰结束时间" uitype="datetime"/>
+                    <field name="deicing_fluid_usage" label="除冰液使用量(L)" uitype="number" precision="4"/>
+                    <field name="is_recycled" label="是否回收" uitype="select" required="true">
+                        <options>
+                            <option value="1" label="是"/>
+                            <option value="0" label="否"/>
+                        </options>
+                    </field>
+                    <field name="recycled_volume" label="回收量(L)" uitype="number" precision="4"
+                        visibleExpr="is_recycled == 1" requiredExpr="is_recycled == 1"/>
+                    <field name="pk_recycling_pool" label="回收池" uitype="refer" refcode="aim_deicing_pool"
+                        visibleExpr="is_recycled == 1" requiredExpr="is_recycled == 1"/>
+                    <field name="pool_code" label="回收池编码" uitype="string" disabled="true"/>
+                    <field name="record_status" label="记录状态" uitype="select" disabled="true">
+                        <options>
+                            <option value="0" label="待检测"/>
+                            <option value="1" label="检测合格"/>
+                            <option value="2" label="检测超限"/>
+                            <option value="3" label="已转运"/>
+                        </options>
+                    </field>
+                    <field name="bill_status" label="联单状态" uitype="select" disabled="true" colspan="2">
+                        <options>
+                            <option value="0" label="待确认"/>
+                            <option value="1" label="已确认"/>
+                            <option value="2" label="已转运"/>
+                            <option value="3" label="已处置"/>
+                        </options>
+                    </field>
+                    <field name="unrecycled_reason" label="未回收原因" uitype="textarea"
+                        visibleExpr="is_recycled == 0" requiredExpr="is_recycled == 0" colspan="4"/>
+                    <field name="remark" label="备注" uitype="textarea" colspan="4"/>
+                </fieldGroup>
+            </fieldGroups>
+        </form>
+
+        <tabs>
+            <tab id="testTab" title="浓度检测记录">
+                <toolbar>
+                    <button id="addTest" label="新增检测" icon="icon-add" type="primary"
+                        onClick="addConcentrationTest"/>
+                    <button id="deleteTest" label="删除" icon="icon-delete" type="danger"/>
+                </toolbar>
+                <grid id="testGrid" entity="aim.deicingtest" parentField="pk_deicing_record">
+                    <columns>
+                        <column name="test_no" label="检测单号" width="120"/>
+                        <column name="test_time" label="检测时间" width="150"/>
+                        <column name="tester" label="检测人(环保员)" width="120" render="user"/>
+                        <column name="concentration_value" label="浓度值(mg/L)" width="120" align="right"/>
+                        <column name="is_over_limit" label="是否超限" width="80" render="enum">
+                            <enumMap>
+                                <entry key="1" value="是" color="red"/>
+                                <entry key="0" value="否" color="green"/>
+                            </enumMap>
+                        </column>
+                        <column name="test_result" label="检测结果" width="200"/>
+                        <column name="test_method" label="检测方法" width="120"/>
+                        <column name="sample_point" label="采样点" width="120"/>
+                        <column name="remark" label="备注" width="200"/>
+                    </columns>
+                </grid>
+            </tab>
+
+            <tab id="billTab" title="外运联单">
+                <toolbar>
+                    <button id="addBill" label="新增联单" icon="icon-add" type="primary"
+                        onClick="addTransportBill"/>
+                    <button id="confirmBill" label="确认联单" icon="icon-confirm" type="success"
+                        action="aim.deicing.confirmTransportBill"/>
+                    <button id="deleteBill" label="删除" icon="icon-delete" type="danger"/>
+                </toolbar>
+                <grid id="billGrid" entity="aim.deicingbill" parentField="pk_deicing_record">
+                    <columns>
+                        <column name="bill_no" label="联单编号" width="120"/>
+                        <column name="transport_unit" label="转运单位" width="150"/>
+                        <column name="disposal_unit" label="处置单位" width="150"/>
+                        <column name="transport_date" label="转运日期" width="100"/>
+                        <column name="transport_volume" label="转运量(L)" width="100" align="right"/>
+                        <column name="transport_type" label="外运类型" width="100" render="enum">
+                            <enumMap>
+                                <entry key="1" value="普通废水" color="green"/>
+                                <entry key="2" value="危废处置" color="red"/>
+                            </enumMap>
+                        </column>
+                        <column name="bill_status" label="联单状态" width="100" render="enum">
+                            <enumMap>
+                                <entry key="0" value="待确认" color="orange"/>
+                                <entry key="1" value="已确认" color="green"/>
+                                <entry key="2" value="已转运" color="blue"/>
+                                <entry key="3" value="已处置" color="purple"/>
+                            </enumMap>
+                        </column>
+                        <column name="confirm_person" label="确认人" width="100" render="user"/>
+                        <column name="confirm_time" label="确认时间" width="150"/>
+                        <column name="is_disposed" label="是否已处置" width="80" render="enum">
+                            <enumMap>
+                                <entry key="1" value="是" color="green"/>
+                                <entry key="0" value="否" color="orange"/>
+                            </enumMap>
+                        </column>
+                        <column name="disposal_time" label="处置时间" width="150"/>
+                        <column name="remark" label="备注" width="200"/>
+                    </columns>
+                </grid>
+            </tab>
+
+            <tab id="traceTab" title="外运轨迹">
+                <grid id="traceGrid" entity="aim.deicingtrace" parentField="pk_deicing_record"
+                    action="aim.deicing.queryTransportTrace">
+                    <columns>
+                        <column name="trace_order" label="顺序" width="60" align="center"/>
+                        <column name="trace_node" label="轨迹节点" width="150"/>
+                        <column name="operate_time" label="操作时间" width="150"/>
+                        <column name="operator" label="操作人" width="100" render="user"/>
+                        <column name="trace_status" label="状态" width="100"/>
+                        <column name="location" label="当前位置" width="150"/>
+                        <column name="trace_remark" label="备注" width="300"/>
+                    </columns>
+                </grid>
+                <timeline id="traceTimeline" entity="aim.deicingtrace"
+                    timeField="operate_time"
+                    titleField="trace_node"
+                    descField="trace_remark"
+                    userField="operator"
+                    statusField="trace_status"
+                    orderField="trace_order"/>
+            </tab>
+        </tabs>
+    </body>
+
+    <events>
+        <event name="afterEdit" field="is_recycled">
+            <action type="setValue" target="unrecycled_reason" valueExpr="is_recycled == 0 ? '' : null"/>
+            <action type="setValue" target="recycled_volume" valueExpr="is_recycled == 1 ? recycled_volume : 0"/>
+            <action type="setVisible" target="unrecycled_reason" valueExpr="is_recycled == 0"/>
+            <action type="setVisible" target="recycled_volume" valueExpr="is_recycled == 1"/>
+            <action type="setVisible" target="pk_recycling_pool" valueExpr="is_recycled == 1"/>
+        </event>
+
+        <event name="addConcentrationTest">
+            <action type="openModal" modal="concentrationTestModal" title="新增浓度检测"/>
+        </event>
+
+        <event name="addTransportBill">
+            <action type="openModal" modal="transportBillModal" title="新增外运联单"/>
+        </event>
+    </events>
+
+    <modals>
+        <modal id="concentrationTestModal" title="浓度检测" width="600">
+            <form entity="aim.deicingtest">
+                <fieldGroups>
+                    <fieldGroup columns="2">
+                        <field name="test_time" label="检测时间" uitype="datetime" required="true"/>
+                        <field name="tester" label="检测人" uitype="refer" refcode="user" required="true"/>
+                        <field name="concentration_value" label="浓度值(mg/L)" uitype="number" precision="4" required="true"/>
+                        <field name="test_method" label="检测方法" uitype="string"/>
+                        <field name="sample_point" label="采样点" uitype="string" colspan="2"/>
+                        <field name="remark" label="备注" uitype="textarea" colspan="2"/>
+                    </fieldGroup>
+                </fieldGroups>
+            </form>
+            <footer>
+                <button label="取消" onClick="closeModal"/>
+                <button label="保存" type="primary" action="aim.deicing.saveConcentrationTest"/>
+            </footer>
+        </modal>
+
+        <modal id="transportBillModal" title="外运联单" width="700">
+            <form entity="aim.deicingbill">
+                <fieldGroups>
+                    <fieldGroup columns="2">
+                        <field name="transport_unit" label="转运单位" uitype="string" required="true"/>
+                        <field name="disposal_unit" label="处置单位" uitype="string"/>
+                        <field name="transport_date" label="转运日期" uitype="date" required="true"/>
+                        <field name="transport_volume" label="转运量(L)" uitype="number" precision="4" required="true"/>
+                        <field name="transport_type" label="外运类型" uitype="select" required="true">
+                            <options>
+                                <option value="1" label="普通废水"/>
+                                <option value="2" label="危废处置"/>
+                            </options>
+                        </field>
+                        <field name="bill_status" label="联单状态" uitype="select" defaultValue="0" disabled="true">
+                            <options>
+                                <option value="0" label="待确认"/>
+                                <option value="1" label="已确认"/>
+                            </options>
+                        </field>
+                        <field name="remark" label="备注" uitype="textarea" colspan="2"/>
+                    </fieldGroup>
+                </fieldGroups>
+            </form>
+            <footer>
+                <button label="取消" onClick="closeModal"/>
+                <button label="保存" type="primary" action="aim.deicing.saveTransportBill"/>
+            </footer>
+        </modal>
+    </modals>
+</page>

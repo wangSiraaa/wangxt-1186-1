@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bmf:BusinessModel xmlns:bmf="http://www.nccloud.com/bmf"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.nccloud.com/bmf bmf.xsd">
+
+    <businessEntity name="aim.deicingpool" displayName="回收池档案"
+        className="nccloud.web.aim.deicing.vo.RecyclingPoolVO"
+        tableName="aim_deicing_pool">
+
+        <attributes>
+            <attribute name="pk_recycling_pool" displayName="主键" dataType="String" length="36" isPrimaryKey="true"/>
+            <attribute name="pool_code" displayName="回收池编码" dataType="String" length="50" isRequired="true"/>
+            <attribute name="pool_name" displayName="回收池名称" dataType="String" length="100" isRequired="true"/>
+            <attribute name="location" displayName="位置" dataType="String" length="200"/>
+            <attribute name="design_capacity" displayName="设计容量(m³)" dataType="UFDouble" precision="20" scale="4"/>
+            <attribute name="current_stock" displayName="当前存量(m³)" dataType="UFDouble" precision="20" scale="4"/>
+            <attribute name="pool_status" displayName="状态" dataType="Integer">
+                <enumValues>
+                    <enumValue value="1" displayName="启用"/>
+                    <enumValue value="0" displayName="停用"/>
+                </enumValues>
+            </attribute>
+            <attribute name="remark" displayName="备注" dataType="String" length="500"/>
+            <attribute name="pk_group" displayName="集团" dataType="String" length="36"/>
+            <attribute name="pk_org" displayName="组织" dataType="String" length="36"/>
+            <attribute name="creator" displayName="创建人" dataType="String" length="36"/>
+            <attribute name="creationtime" displayName="创建时间" dataType="UFDateTime"/>
+            <attribute name="modifier" displayName="修改人" dataType="String" length="36"/>
+            <attribute name="modifiedtime" displayName="修改时间" dataType="UFDateTime"/>
+            <attribute name="dr" displayName="删除标记" dataType="Integer"/>
+            <attribute name="ts" displayName="时间戳" dataType="UFDateTime"/>
+        </attributes>
+    </businessEntity>
+</bmf:BusinessModel>

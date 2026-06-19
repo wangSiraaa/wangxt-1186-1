@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bmf:BusinessModel xmlns:bmf="http://www.nccloud.com/bmf"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.nccloud.com/bmf bmf.xsd">
+
+    <businessEntity name="aim.deicingrecord" displayName="除冰作业登记"
+        className="nccloud.web.aim.deicing.vo.DeicingRecordVO"
+        tableName="aim_deicing_record">
+
+        <attributes>
+            <attribute name="pk_deicing_record" displayName="主键" dataType="String" length="36" isPrimaryKey="true"/>
+            <attribute name="bill_no" displayName="单据编号" dataType="String" length="50"/>
+            <attribute name="bill_status" displayName="单据状态" dataType="Integer">
+                <enumValues>
+                    <enumValue value="0" displayName="草稿"/>
+                    <enumValue value="1" displayName="已登记"/>
+                    <enumValue value="2" displayName="已检测"/>
+                    <enumValue value="3" displayName="已确认"/>
+                </enumValues>
+            </attribute>
+            <attribute name="deicing_date" displayName="除冰日期" dataType="UFDate" isRequired="true"/>
+            <attribute name="flight_no" displayName="航班号" dataType="String" length="20" isRequired="true"/>
+            <attribute name="flight_sortie" displayName="航班架次" dataType="String" length="50" isRequired="true"/>
+            <attribute name="aircraft_type" displayName="机型" dataType="String" length="50"/>
+            <attribute name="aircraft_reg_no" displayName="飞机注册号" dataType="String" length="20"/>
+            <attribute name="pk_apron" displayName="机坪" dataType="String" length="36"/>
+            <attribute name="apron_operator" displayName="机坪作业人员" dataType="String" length="36"/>
+            <attribute name="deicing_start_time" displayName="除冰开始时间" dataType="UFDateTime"/>
+            <attribute name="deicing_end_time" displayName="除冰结束时间" dataType="UFDateTime"/>
+            <attribute name="deicing_fluid_usage" displayName="除冰液使用量(L)" dataType="UFDouble" precision="20" scale="4"/>
+            <attribute name="is_recycled" displayName="是否回收" dataType="Integer" isRequired="true">
+                <enumValues>
+                    <enumValue value="1" displayName="是"/>
+                    <enumValue value="0" displayName="否"/>
+                </enumValues>
+            </attribute>
+            <attribute name="recycled_volume" displayName="回收量(L)" dataType="UFDouble" precision="20" scale="4"/>
+            <attribute name="unrecycled_reason" displayName="未回收原因" dataType="String" length="500"/>
+            <attribute name="pk_recycling_pool" displayName="回收池" dataType="String" length="36"/>
+            <attribute name="pool_code" displayName="回收池编码" dataType="String" length="50"/>
+            <attribute name="record_status" displayName="记录状态" dataType="Integer">
+                <enumValues>
+                    <enumValue value="0" displayName="待检测"/>
+                    <enumValue value="1" displayName="检测合格"/>
+                    <enumValue value="2" displayName="检测超限"/>
+                    <enumValue value="3" displayName="已转运"/>
+                </enumValues>
+            </attribute>
+            <attribute name="remark" displayName="备注" dataType="String" length="500"/>
+            <attribute name="pk_group" displayName="集团" dataType="String" length="36"/>
+            <attribute name="pk_org" displayName="组织" dataType="String" length="36"/>
+            <attribute name="creator" displayName="创建人" dataType="String" length="36"/>
+            <attribute name="creationtime" displayName="创建时间" dataType="UFDateTime"/>
+            <attribute name="modifier" displayName="修改人" dataType="String" length="36"/>
+            <attribute name="modifiedtime" displayName="修改时间" dataType="UFDateTime"/>
+            <attribute name="dr" displayName="删除标记" dataType="Integer"/>
+            <attribute name="ts" displayName="时间戳" dataType="UFDateTime"/>
+        </attributes>
+
+        <children>
+            <child name="aim.deicingtest" displayName="浓度检测记录" foreignKey="pk_deicing_record"/>
+            <child name="aim.deicingbill" displayName="外运联单" foreignKey="pk_deicing_record"/>
+            <child name="aim.deicingtrace" displayName="外运轨迹" foreignKey="pk_deicing_record"/>
+        </children>
+    </businessEntity>
+</bmf:BusinessModel>

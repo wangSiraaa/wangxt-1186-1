@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bmf:BusinessModel xmlns:bmf="http://www.nccloud.com/bmf"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.nccloud.com/bmf bmf.xsd">
+
+    <businessEntity name="aim.deicingbill" displayName="外运联单"
+        className="nccloud.web.aim.deicing.vo.TransportBillVO"
+        tableName="aim_deicing_bill">
+
+        <attributes>
+            <attribute name="pk_transport_bill" displayName="主键" dataType="String" length="36" isPrimaryKey="true"/>
+            <attribute name="pk_deicing_record" displayName="除冰记录" dataType="String" length="36" isRequired="true"/>
+            <attribute name="bill_no" displayName="联单编号" dataType="String" length="50"/>
+            <attribute name="transport_unit" displayName="转运单位" dataType="String" length="100" isRequired="true"/>
+            <attribute name="disposal_unit" displayName="处置单位" dataType="String" length="100"/>
+            <attribute name="transport_date" displayName="转运日期" dataType="UFDate"/>
+            <attribute name="transport_volume" displayName="转运量(L)" dataType="UFDouble" precision="20" scale="4" isRequired="true"/>
+            <attribute name="transport_type" displayName="外运类型" dataType="Integer" isRequired="true">
+                <enumValues>
+                    <enumValue value="1" displayName="普通废水"/>
+                    <enumValue value="2" displayName="危废处置"/>
+                </enumValues>
+            </attribute>
+            <attribute name="bill_status" displayName="联单状态" dataType="Integer">
+                <enumValues>
+                    <enumValue value="0" displayName="待确认"/>
+                    <enumValue value="1" displayName="已确认"/>
+                    <enumValue value="2" displayName="已转运"/>
+                    <enumValue value="3" displayName="已处置"/>
+                </enumValues>
+            </attribute>
+            <attribute name="confirm_person" displayName="确认人(外运单位)" dataType="String" length="36"/>
+            <attribute name="confirm_time" displayName="确认时间" dataType="UFDateTime"/>
+            <attribute name="disposal_remark" displayName="处置备注" dataType="String" length="500"/>
+            <attribute name="is_disposed" displayName="是否已处置" dataType="Integer">
+                <enumValues>
+                    <enumValue value="1" displayName="是"/>
+                    <enumValue value="0" displayName="否"/>
+                </enumValues>
+            </attribute>
+            <attribute name="disposal_time" displayName="处置时间" dataType="UFDateTime"/>
+            <attribute name="remark" displayName="备注" dataType="String" length="500"/>
+            <attribute name="pk_group" displayName="集团" dataType="String" length="36"/>
+            <attribute name="pk_org" displayName="组织" dataType="String" length="36"/>
+            <attribute name="creator" displayName="创建人" dataType="String" length="36"/>
+            <attribute name="creationtime" displayName="创建时间" dataType="UFDateTime"/>
+            <attribute name="modifier" displayName="修改人" dataType="String" length="36"/>
+            <attribute name="modifiedtime" displayName="修改时间" dataType="UFDateTime"/>
+            <attribute name="dr" displayName="删除标记" dataType="Integer"/>
+            <attribute name="ts" displayName="时间戳" dataType="UFDateTime"/>
+        </attributes>
+    </businessEntity>
+</bmf:BusinessModel>

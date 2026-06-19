@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.yonyoufintech.product</groupId>
+    <artifactId>fbip-product-parent</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+    <name>fbip-product-parent</name>
+
+    <modules>
+        <module>aim-deicing</module>
+    </modules>
+
+    <properties>
+        <revision>8.3.0-jdk8-dev</revision>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.yonyoufintech.product</groupId>
+                <artifactId>baseapp-public-lib</artifactId>
+                <version>8.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yonyoufintech.platform</groupId>
+                <artifactId>aim-public-lib</artifactId>
+                <version>8.2.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
