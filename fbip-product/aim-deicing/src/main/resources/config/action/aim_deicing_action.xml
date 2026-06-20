@@ -31,6 +31,11 @@
         <clazz>nccloud.web.aim.deicing.action.ConcentrationTestSaveAction</clazz>
     </action>
     <action>
+        <name>aim.deicing.saveTransportBill</name>
+        <label>保存外运联单</label>
+        <clazz>nccloud.web.aim.deicing.action.TransportBillSaveAction</clazz>
+    </action>
+    <action>
         <name>aim.deicing.confirmTransportBill</name>
         <label>确认外运联单</label>
         <clazz>nccloud.web.aim.deicing.action.TransportBillConfirmAction</clazz>

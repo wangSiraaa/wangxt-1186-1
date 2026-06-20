@@ -22,6 +22,8 @@ public interface IDeicingRecordService {
 
     ConcentrationTestVO saveConcentrationTest(ConcentrationTestVO testVO) throws BusinessException;
 
+    TransportBillVO saveTransportBill(TransportBillVO billVO) throws BusinessException;
+
     TransportBillVO confirmTransportBill(TransportBillVO billVO) throws BusinessException;
 
     TransportTraceVO addTransportTrace(TransportTraceVO traceVO) throws BusinessException;

@@ -200,6 +200,27 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
     }
 
     @Override
+    public TransportBillVO saveTransportBill(TransportBillVO billVO) throws BusinessException {
+        validateTransportBillSave(billVO);
+
+        billVO.setBill_status(0);
+        billVO.setIs_disposed(0);
+        fillAuditFields(billVO, true);
+        billVO.setStatus(VOStatus.NEW);
+
+        try {
+            dao.insertVO(billVO);
+
+            addTransportTrace(billVO.getPk_deicing_record(), billVO.getPk_transport_bill(),
+                    "创建联单", "外运单位创建转运联单，状态为待确认");
+
+        } catch (DAOException e) {
+            ExceptionUtils.wrapBusinessException("保存外运联单失败");
+        }
+        return billVO;
+    }
+
+    @Override
     public TransportBillVO confirmTransportBill(TransportBillVO billVO) throws BusinessException {
         validateBillConfirm(billVO);
 
@@ -282,6 +303,25 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
         }
         if (testVO.getTest_time() == null) {
             testVO.setTest_time(new UFDateTime());
+        }
+    }
+
+    public void validateTransportBillSave(TransportBillVO billVO) throws BusinessException {
+        if (StringUtils.isEmpty(billVO.getPk_deicing_record())) {
+            ExceptionUtils.wrapBusinessException("除冰记录主键不能为空");
+        }
+        if (StringUtils.isEmpty(billVO.getTransport_unit())) {
+            ExceptionUtils.wrapBusinessException("请填写转运单位");
+        }
+        if (billVO.getTransport_date() == null) {
+            ExceptionUtils.wrapBusinessException("请选择转运日期");
+        }
+        if (billVO.getTransport_volume() == null
+                || billVO.getTransport_volume().compareTo(UFDouble.ZERO_DBL) <= 0) {
+            ExceptionUtils.wrapBusinessException("转运量必须大于0");
+        }
+        if (billVO.getTransport_type() == null) {
+            ExceptionUtils.wrapBusinessException("请选择外运类型");
         }
     }
 
