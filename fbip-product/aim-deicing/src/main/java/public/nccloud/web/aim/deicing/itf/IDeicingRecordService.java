@@ -2,6 +2,7 @@ package nccloud.web.aim.deicing.itf;
 
 import nc.vo.pub.BusinessException;
 import nccloud.web.aim.deicing.vo.AggDeicingRecordVO;
+import nccloud.web.aim.deicing.vo.BillPoolVO;
 import nccloud.web.aim.deicing.vo.ConcentrationTestVO;
 import nccloud.web.aim.deicing.vo.DeicingRecordVO;
 import nccloud.web.aim.deicing.vo.RecyclingPoolVO;
@@ -22,7 +23,7 @@ public interface IDeicingRecordService {
 
     ConcentrationTestVO saveConcentrationTest(ConcentrationTestVO testVO) throws BusinessException;
 
-    TransportBillVO saveTransportBill(TransportBillVO billVO) throws BusinessException;
+    TransportBillVO saveTransportBill(TransportBillVO billVO, BillPoolVO[] poolVOs) throws BusinessException;
 
     TransportBillVO confirmTransportBill(TransportBillVO billVO) throws BusinessException;
 
@@ -39,4 +40,12 @@ public interface IDeicingRecordService {
     TransportTraceVO[] queryTransportTraces(String billId) throws BusinessException;
 
     RecyclingPoolVO[] queryRecyclingPools(String pkOrg) throws BusinessException;
+
+    BillPoolVO[] queryBillPools(String billId) throws BusinessException;
+
+    RecyclingPoolVO updatePoolConcentration(String poolId, nc.vo.pub.lang.UFDouble concentration) throws BusinessException;
+
+    void validateUnrecycledType(DeicingRecordVO recordVO) throws BusinessException;
+
+    void validateTransportTypeByConcentration(String recordId, Integer transportType) throws BusinessException;
 }

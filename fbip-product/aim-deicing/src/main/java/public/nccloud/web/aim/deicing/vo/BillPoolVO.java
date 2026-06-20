@@ -3,21 +3,21 @@ package nccloud.web.aim.deicing.vo;
 import nc.vo.pub.SuperVO;
 import nc.vo.pub.lang.UFDateTime;
 import nc.vo.pub.lang.UFDouble;
-import nc.md.model.MetaDataException;
 import nc.vo.pubapp.pattern.model.meta.entity.vo.IVOMeta;
 import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
 
-public class RecyclingPoolVO extends SuperVO {
+public class BillPoolVO extends SuperVO {
     private static final long serialVersionUID = 1L;
 
+    private String pk_bill_pool;
+    private String pk_transport_bill;
     private String pk_recycling_pool;
     private String pool_code;
     private String pool_name;
-    private String location;
-    private UFDouble design_capacity;
-    private UFDouble current_stock;
-    private UFDouble mixed_concentration;
-    private Integer pool_status;
+    private UFDouble pool_volume;
+    private UFDouble pool_concentration;
+    private String trace_start_node;
+    private String trace_end_node;
     private String remark;
 
     private String pk_group;
@@ -29,33 +29,50 @@ public class RecyclingPoolVO extends SuperVO {
     private Integer dr = 0;
     private UFDateTime ts;
 
+    public static final String PK_BILL_POOL = "pk_bill_pool";
+    public static final String PK_TRANSPORT_BILL = "pk_transport_bill";
     public static final String PK_RECYCLING_POOL = "pk_recycling_pool";
     public static final String POOL_CODE = "pool_code";
     public static final String POOL_NAME = "pool_name";
-    public static final String LOCATION = "location";
-    public static final String DESIGN_CAPACITY = "design_capacity";
-    public static final String CURRENT_STOCK = "current_stock";
-    public static final String MIXED_CONCENTRATION = "mixed_concentration";
-    public static final String POOL_STATUS = "pool_status";
+    public static final String POOL_VOLUME = "pool_volume";
+    public static final String POOL_CONCENTRATION = "pool_concentration";
+    public static final String TRACE_START_NODE = "trace_start_node";
+    public static final String TRACE_END_NODE = "trace_end_node";
 
     @Override
     public String getTableName() {
-        return "aim_deicing_pool";
+        return "aim_deicing_bill_pool";
     }
 
     @Override
     public String getPKFieldName() {
-        return "pk_recycling_pool";
+        return "pk_bill_pool";
     }
 
     @Override
     public String getParentPKFieldName() {
-        return null;
+        return "pk_transport_bill";
     }
 
     @Override
     public IVOMeta getMetaData() {
-        return VOMetaFactory.getInstance().getVOMeta("aim.deicingpool");
+        return VOMetaFactory.getInstance().getVOMeta("aim.deicingbillpool");
+    }
+
+    public String getPk_bill_pool() {
+        return pk_bill_pool;
+    }
+
+    public void setPk_bill_pool(String pk_bill_pool) {
+        this.pk_bill_pool = pk_bill_pool;
+    }
+
+    public String getPk_transport_bill() {
+        return pk_transport_bill;
+    }
+
+    public void setPk_transport_bill(String pk_transport_bill) {
+        this.pk_transport_bill = pk_transport_bill;
     }
 
     public String getPk_recycling_pool() {
@@ -82,44 +99,36 @@ public class RecyclingPoolVO extends SuperVO {
         this.pool_name = pool_name;
     }
 
-    public String getLocation() {
-        return location;
+    public UFDouble getPool_volume() {
+        return pool_volume;
     }
 
-    public void setLocation(String location) {
-        this.location = location;
+    public void setPool_volume(UFDouble pool_volume) {
+        this.pool_volume = pool_volume;
     }
 
-    public UFDouble getDesign_capacity() {
-        return design_capacity;
+    public UFDouble getPool_concentration() {
+        return pool_concentration;
     }
 
-    public void setDesign_capacity(UFDouble design_capacity) {
-        this.design_capacity = design_capacity;
+    public void setPool_concentration(UFDouble pool_concentration) {
+        this.pool_concentration = pool_concentration;
     }
 
-    public UFDouble getCurrent_stock() {
-        return current_stock;
+    public String getTrace_start_node() {
+        return trace_start_node;
     }
 
-    public void setCurrent_stock(UFDouble current_stock) {
-        this.current_stock = current_stock;
+    public void setTrace_start_node(String trace_start_node) {
+        this.trace_start_node = trace_start_node;
     }
 
-    public UFDouble getMixed_concentration() {
-        return mixed_concentration;
+    public String getTrace_end_node() {
+        return trace_end_node;
     }
 
-    public void setMixed_concentration(UFDouble mixed_concentration) {
-        this.mixed_concentration = mixed_concentration;
-    }
-
-    public Integer getPool_status() {
-        return pool_status;
-    }
-
-    public void setPool_status(Integer pool_status) {
-        this.pool_status = pool_status;
+    public void setTrace_end_node(String trace_end_node) {
+        this.trace_end_node = trace_end_node;
     }
 
     public String getRemark() {

@@ -25,6 +25,7 @@ public class DeicingRecordVO extends SuperVO {
     private UFDouble deicing_fluid_usage;
     private Integer is_recycled;
     private UFDouble recycled_volume;
+    private Integer unrecycled_type;
     private String unrecycled_reason;
     private String pk_recycling_pool;
     private String pool_code;
@@ -47,9 +48,14 @@ public class DeicingRecordVO extends SuperVO {
     public static final String FLIGHT_SORTIE = "flight_sortie";
     public static final String IS_RECYCLED = "is_recycled";
     public static final String RECYCLED_VOLUME = "recycled_volume";
+    public static final String UNRECYCLED_TYPE = "unrecycled_type";
     public static final String UNRECYCLED_REASON = "unrecycled_reason";
     public static final String PK_RECYCLING_POOL = "pk_recycling_pool";
     public static final String RECORD_STATUS = "record_status";
+    
+    public static final int UNRECYCLED_TYPE_WEATHER = 1;
+    public static final int UNRECYCLED_TYPE_APRON = 2;
+    public static final int UNRECYCLED_TYPE_EQUIPMENT = 3;
 
     @Override
     public String getTableName() {
@@ -189,6 +195,14 @@ public class DeicingRecordVO extends SuperVO {
 
     public void setRecycled_volume(UFDouble recycled_volume) {
         this.recycled_volume = recycled_volume;
+    }
+
+    public Integer getUnrecycled_type() {
+        return unrecycled_type;
+    }
+
+    public void setUnrecycled_type(Integer unrecycled_type) {
+        this.unrecycled_type = unrecycled_type;
     }
 
     public String getUnrecycled_reason() {

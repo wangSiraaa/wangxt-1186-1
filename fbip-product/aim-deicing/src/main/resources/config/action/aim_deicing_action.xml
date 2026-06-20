@@ -50,4 +50,9 @@
         <label>查询回收池列表</label>
         <clazz>nccloud.web.aim.deicing.action.RecyclingPoolQueryAction</clazz>
     </action>
+    <action>
+        <name>aim.deicing.queryBillPool</name>
+        <label>查询联单来源池明细</label>
+        <clazz>nccloud.web.aim.deicing.action.BillPoolQueryAction</clazz>
+    </action>
 </actions>

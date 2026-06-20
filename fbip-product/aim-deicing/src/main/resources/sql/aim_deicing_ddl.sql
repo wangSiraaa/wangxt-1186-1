@@ -14,6 +14,7 @@ CREATE TABLE aim_deicing_pool (
     location             VARCHAR(200),
     design_capacity      DECIMAL(20,4),
     current_stock        DECIMAL(20,4)  DEFAULT 0,
+    mixed_concentration  DECIMAL(20,4)  DEFAULT 0,
     pool_status          INTEGER        DEFAULT 1,
     remark               VARCHAR(500),
     pk_group             VARCHAR(36),
@@ -34,6 +35,7 @@ COMMENT ON COLUMN aim_deicing_pool.pool_name IS '回收池名称';
 COMMENT ON COLUMN aim_deicing_pool.location IS '位置';
 COMMENT ON COLUMN aim_deicing_pool.design_capacity IS '设计容量(m³)';
 COMMENT ON COLUMN aim_deicing_pool.current_stock IS '当前存量(m³)';
+COMMENT ON COLUMN aim_deicing_pool.mixed_concentration IS '混合浓度(mg/L)';
 COMMENT ON COLUMN aim_deicing_pool.pool_status IS '状态(1-启用 0-停用)';
 COMMENT ON COLUMN aim_deicing_pool.remark IS '备注';
 COMMENT ON COLUMN aim_deicing_pool.pk_group IS '集团主键';
@@ -67,6 +69,7 @@ CREATE TABLE aim_deicing_record (
     deicing_fluid_usage  DECIMAL(20,4),
     is_recycled          INTEGER        NOT NULL,
     recycled_volume      DECIMAL(20,4),
+    unrecycled_type      INTEGER,
     unrecycled_reason    VARCHAR(500),
     pk_recycling_pool    VARCHAR(36),
     pool_code            VARCHAR(50),
@@ -99,7 +102,8 @@ COMMENT ON COLUMN aim_deicing_record.deicing_end_time IS '除冰结束时间';
 COMMENT ON COLUMN aim_deicing_record.deicing_fluid_usage IS '除冰液使用量(L)';
 COMMENT ON COLUMN aim_deicing_record.is_recycled IS '是否回收(1-是 0-否)';
 COMMENT ON COLUMN aim_deicing_record.recycled_volume IS '回收量(L)';
-COMMENT ON COLUMN aim_deicing_record.unrecycled_reason IS '未回收原因';
+COMMENT ON COLUMN aim_deicing_record.unrecycled_type IS '未回收原因分类(1-天气 2-机位 3-设备故障)';
+COMMENT ON COLUMN aim_deicing_record.unrecycled_reason IS '未回收原因说明';
 COMMENT ON COLUMN aim_deicing_record.pk_recycling_pool IS '回收池主键';
 COMMENT ON COLUMN aim_deicing_record.pool_code IS '回收池编码';
 COMMENT ON COLUMN aim_deicing_record.record_status IS '记录状态(0-待检测 1-检测合格 2-检测超限 3-已转运)';
@@ -208,7 +212,7 @@ COMMENT ON COLUMN aim_deicing_bill.transport_unit IS '转运单位';
 COMMENT ON COLUMN aim_deicing_bill.disposal_unit IS '处置单位';
 COMMENT ON COLUMN aim_deicing_bill.transport_date IS '转运日期';
 COMMENT ON COLUMN aim_deicing_bill.transport_volume IS '转运量(L)';
-COMMENT ON COLUMN aim_deicing_bill.transport_type IS '外运类型(1-普通废水 2-危废处置)';
+COMMENT ON COLUMN aim_deicing_bill.transport_type IS '外运类型(1-普通废水 2-危废处置 3-再处理)';
 COMMENT ON COLUMN aim_deicing_bill.bill_status IS '联单状态(0-待确认 1-已确认 2-已转运 3-已处置)';
 COMMENT ON COLUMN aim_deicing_bill.confirm_person IS '确认人(外运单位)';
 COMMENT ON COLUMN aim_deicing_bill.confirm_time IS '确认时间';
@@ -231,7 +235,55 @@ CREATE INDEX idx_aim_deicing_bill_status ON aim_deicing_bill(bill_status, dr);
 CREATE INDEX idx_aim_deicing_bill_date ON aim_deicing_bill(transport_date, dr);
 
 -- ============================================================
--- 5. 外运轨迹表 aim_deicing_trace
+-- 5. 联单来源池明细表 aim_deicing_bill_pool
+-- ============================================================
+CREATE TABLE aim_deicing_bill_pool (
+    pk_bill_pool         VARCHAR(36)    NOT NULL,
+    pk_transport_bill    VARCHAR(36)    NOT NULL,
+    pk_recycling_pool    VARCHAR(36)    NOT NULL,
+    pool_code            VARCHAR(50),
+    pool_name            VARCHAR(100),
+    pool_volume          DECIMAL(20,4)  NOT NULL,
+    pool_concentration   DECIMAL(20,4),
+    trace_start_node     VARCHAR(100),
+    trace_end_node       VARCHAR(100),
+    remark               VARCHAR(500),
+    pk_group             VARCHAR(36),
+    pk_org               VARCHAR(36),
+    creator              VARCHAR(36),
+    creationtime         TIMESTAMP,
+    modifier             VARCHAR(36),
+    modifiedtime         TIMESTAMP,
+    dr                   INTEGER        DEFAULT 0,
+    ts                   TIMESTAMP      DEFAULT SYSDATE,
+    CONSTRAINT pk_aim_deicing_bill_pool PRIMARY KEY (pk_bill_pool)
+);
+
+COMMENT ON TABLE aim_deicing_bill_pool IS '联单来源池明细';
+COMMENT ON COLUMN aim_deicing_bill_pool.pk_bill_pool IS '主键';
+COMMENT ON COLUMN aim_deicing_bill_pool.pk_transport_bill IS '外运联单主键';
+COMMENT ON COLUMN aim_deicing_bill_pool.pk_recycling_pool IS '回收池主键';
+COMMENT ON COLUMN aim_deicing_bill_pool.pool_code IS '回收池编码';
+COMMENT ON COLUMN aim_deicing_bill_pool.pool_name IS '回收池名称';
+COMMENT ON COLUMN aim_deicing_bill_pool.pool_volume IS '来源池转运量(L)';
+COMMENT ON COLUMN aim_deicing_bill_pool.pool_concentration IS '来源池浓度(mg/L)';
+COMMENT ON COLUMN aim_deicing_bill_pool.trace_start_node IS '轨迹起点';
+COMMENT ON COLUMN aim_deicing_bill_pool.trace_end_node IS '轨迹终点';
+COMMENT ON COLUMN aim_deicing_bill_pool.remark IS '备注';
+COMMENT ON COLUMN aim_deicing_bill_pool.pk_group IS '集团主键';
+COMMENT ON COLUMN aim_deicing_bill_pool.pk_org IS '组织主键';
+COMMENT ON COLUMN aim_deicing_bill_pool.creator IS '创建人';
+COMMENT ON COLUMN aim_deicing_bill_pool.creationtime IS '创建时间';
+COMMENT ON COLUMN aim_deicing_bill_pool.modifier IS '修改人';
+COMMENT ON COLUMN aim_deicing_bill_pool.modifiedtime IS '修改时间';
+COMMENT ON COLUMN aim_deicing_bill_pool.dr IS '删除标记(0-正常 1-删除)';
+COMMENT ON COLUMN aim_deicing_bill_pool.ts IS '时间戳';
+
+CREATE INDEX idx_aim_deicing_bill_pool_bill ON aim_deicing_bill_pool(pk_transport_bill, dr);
+CREATE INDEX idx_aim_deicing_bill_pool_pool ON aim_deicing_bill_pool(pk_recycling_pool, dr);
+
+-- ============================================================
+-- 6. 外运轨迹表 aim_deicing_trace
 -- ============================================================
 CREATE TABLE aim_deicing_trace (
     pk_transport_trace   VARCHAR(36)    NOT NULL,

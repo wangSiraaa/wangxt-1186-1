@@ -12,5 +12,6 @@ public class AggDeicingRecordVOMeta extends AbstractBillMeta {
         this.addChildren(ConcentrationTestVO.class);
         this.addChildren(TransportBillVO.class);
         this.addChildren(TransportTraceVO.class);
+        this.addChildren(BillPoolVO.class);
     }
 }

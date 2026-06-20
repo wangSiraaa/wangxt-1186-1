@@ -15,6 +15,7 @@ import nccloud.framework.core.exception.ExceptionUtils;
 import nccloud.util.SessionUtil;
 import nccloud.web.aim.deicing.itf.IDeicingRecordService;
 import nccloud.web.aim.deicing.vo.AggDeicingRecordVO;
+import nccloud.web.aim.deicing.vo.BillPoolVO;
 import nccloud.web.aim.deicing.vo.ConcentrationTestVO;
 import nccloud.web.aim.deicing.vo.DeicingRecordVO;
 import nccloud.web.aim.deicing.vo.RecyclingPoolVO;
@@ -28,7 +29,14 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
     private static final UFDouble CONCENTRATION_LIMIT = new UFDouble("500.00");
     private static final int TRANSPORT_TYPE_NORMAL = 1;
     private static final int TRANSPORT_TYPE_HAZARDOUS = 2;
-    private static final int BILL_STATUS_CONFIRMED = 3;
+    private static final int TRANSPORT_TYPE_RETREATMENT = 3;
+    private static final int BILL_STATUS_CONFIRMED = 1;
+    private static final int BILL_STATUS_TRANSPORTED = 2;
+    private static final int BILL_STATUS_DISPOSED = 3;
+
+    private static final int UNRECYCLED_TYPE_WEATHER = 1;
+    private static final int UNRECYCLED_TYPE_APRON = 2;
+    private static final int UNRECYCLED_TYPE_EQUIPMENT = 3;
 
     private BaseDAO dao;
 
@@ -124,10 +132,23 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
             Collection<ConcentrationTestVO> tests = dao.retrieveByClause(ConcentrationTestVO.class, condition, param);
             Collection<TransportBillVO> bills = dao.retrieveByClause(TransportBillVO.class, condition, param);
             Collection<TransportTraceVO> traces = dao.retrieveByClause(TransportTraceVO.class, condition, param);
+            Collection<BillPoolVO> billPools = new java.util.ArrayList<BillPoolVO>();
+
+            if (bills != null && !bills.isEmpty()) {
+                for (TransportBillVO bill : bills) {
+                    BillPoolVO[] pools = queryBillPools(bill.getPk_transport_bill());
+                    if (pools != null && pools.length > 0) {
+                        for (BillPoolVO pool : pools) {
+                            billPools.add(pool);
+                        }
+                    }
+                }
+            }
 
             int totalLen = (tests != null ? tests.size() : 0)
                     + (bills != null ? bills.size() : 0)
-                    + (traces != null ? traces.size() : 0);
+                    + (traces != null ? traces.size() : 0)
+                    + billPools.size();
 
             if (totalLen > 0) {
                 nc.vo.pub.SuperVO[] children = new nc.vo.pub.SuperVO[totalLen];
@@ -146,6 +167,9 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
                     for (TransportTraceVO vo : traces) {
                         children[idx++] = vo;
                     }
+                }
+                for (BillPoolVO vo : billPools) {
+                    children[idx++] = vo;
                 }
                 aggVO.setChildren(children);
             }
@@ -193,15 +217,103 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
 
         try {
             dao.insertVO(testVO);
+
+            DeicingRecordVO recordVO = (DeicingRecordVO) dao.retrieveByPK(
+                    DeicingRecordVO.class, testVO.getPk_deicing_record());
+            if (recordVO != null && StringUtils.isNotEmpty(recordVO.getPk_recycling_pool())) {
+                updatePoolMixedConcentration(recordVO.getPk_recycling_pool());
+            }
+
+            if (testVO.getIs_over_limit() != null && testVO.getIs_over_limit() == 1) {
+                recordVO.setRecord_status(2);
+            } else {
+                recordVO.setRecord_status(1);
+            }
+            recordVO.setStatus(VOStatus.UPDATED);
+            fillAuditFields(recordVO, false);
+            dao.updateVO(recordVO);
+
         } catch (DAOException e) {
             ExceptionUtils.wrapBusinessException("保存浓度检测记录失败");
         }
         return testVO;
     }
 
+    private void updatePoolMixedConcentration(String poolId) throws BusinessException {
+        if (StringUtils.isEmpty(poolId)) {
+            return;
+        }
+        try {
+            String sql = "select dr, pk_deicing_record, pk_recycling_pool from aim_deicing_record " +
+                    "where pk_recycling_pool = ? and dr = 0 and is_recycled = 1";
+            SQLParameter param = new SQLParameter();
+            param.addParam(poolId);
+            Collection<DeicingRecordVO> records = dao.retrieveByClause(
+                    DeicingRecordVO.class, "pk_recycling_pool = ? and dr = 0 and is_recycled = 1", param);
+
+            if (CollectionUtils.isEmpty(records)) {
+                updatePoolConcentration(poolId, UFDouble.ZERO_DBL);
+                return;
+            }
+
+            UFDouble totalVolume = UFDouble.ZERO_DBL;
+            UFDouble totalMass = UFDouble.ZERO_DBL;
+
+            for (DeicingRecordVO record : records) {
+                ConcentrationTestVO latestTest = getLatestConcentrationTest(record.getPk_deicing_record());
+                if (latestTest != null && latestTest.getConcentration_value() != null
+                        && record.getRecycled_volume() != null) {
+                    totalVolume = totalVolume.add(record.getRecycled_volume());
+                    totalMass = totalMass.add(
+                            record.getRecycled_volume().multiply(latestTest.getConcentration_value()));
+                }
+            }
+
+            UFDouble mixedConcentration = UFDouble.ZERO_DBL;
+            if (totalVolume.compareTo(UFDouble.ZERO_DBL) > 0) {
+                mixedConcentration = totalMass.div(totalVolume);
+            }
+
+            updatePoolConcentration(poolId, mixedConcentration);
+
+        } catch (DAOException e) {
+            ExceptionUtils.wrapBusinessException("更新回收池混合浓度失败");
+        }
+    }
+
     @Override
-    public TransportBillVO saveTransportBill(TransportBillVO billVO) throws BusinessException {
+    public RecyclingPoolVO updatePoolConcentration(String poolId, UFDouble concentration) throws BusinessException {
+        if (StringUtils.isEmpty(poolId) || concentration == null) {
+            return null;
+        }
+
+        try {
+            RecyclingPoolVO poolVO = (RecyclingPoolVO) dao.retrieveByPK(RecyclingPoolVO.class, poolId);
+            if (poolVO == null) {
+                return null;
+            }
+
+            poolVO.setMixed_concentration(concentration);
+            fillAuditFields(poolVO, false);
+            poolVO.setStatus(VOStatus.UPDATED);
+
+            dao.updateVO(poolVO);
+            return poolVO;
+        } catch (DAOException e) {
+            ExceptionUtils.wrapBusinessException("更新回收池浓度失败");
+        }
+        return null;
+    }
+
+    @Override
+    public TransportBillVO saveTransportBill(TransportBillVO billVO, BillPoolVO[] poolVOs) throws BusinessException {
         validateTransportBillSave(billVO);
+
+        if (poolVOs != null && poolVOs.length > 0) {
+            validateBillPools(poolVOs);
+        }
+
+        validateTransportTypeByConcentration(billVO.getPk_deicing_record(), billVO.getTransport_type());
 
         billVO.setBill_status(0);
         billVO.setIs_disposed(0);
@@ -210,6 +322,15 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
 
         try {
             dao.insertVO(billVO);
+
+            if (poolVOs != null && poolVOs.length > 0) {
+                for (BillPoolVO poolVO : poolVOs) {
+                    poolVO.setPk_transport_bill(billVO.getPk_transport_bill());
+                    fillAuditFields(poolVO, true);
+                    poolVO.setStatus(VOStatus.NEW);
+                    dao.insertVO(poolVO);
+                }
+            }
 
             addTransportTrace(billVO.getPk_deicing_record(), billVO.getPk_transport_bill(),
                     "创建联单", "外运单位创建转运联单，状态为待确认");
@@ -220,16 +341,33 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
         return billVO;
     }
 
+    private void validateBillPools(BillPoolVO[] poolVOs) throws BusinessException {
+        if (poolVOs == null || poolVOs.length == 0) {
+            return;
+        }
+        for (BillPoolVO poolVO : poolVOs) {
+            if (StringUtils.isEmpty(poolVO.getPk_recycling_pool())) {
+                ExceptionUtils.wrapBusinessException("来源池主键不能为空");
+            }
+            if (poolVO.getPool_volume() == null
+                    || poolVO.getPool_volume().compareTo(UFDouble.ZERO_DBL) <= 0) {
+                ExceptionUtils.wrapBusinessException("来源池转运量必须大于0");
+            }
+        }
+    }
+
     @Override
     public TransportBillVO confirmTransportBill(TransportBillVO billVO) throws BusinessException {
         validateBillConfirm(billVO);
 
-        ConcentrationTestVO testVO = getLatestConcentrationTest(billVO.getPk_deicing_record());
-        if (testVO != null && testVO.getIs_over_limit() != null && testVO.getIs_over_limit() == 1) {
-            if (billVO.getTransport_type() != null && billVO.getTransport_type() == TRANSPORT_TYPE_NORMAL) {
-                ExceptionUtils.wrapBusinessException("浓度超限，不能按普通废水外运，请选择危废处置方式");
-            }
+        TransportBillVO oldBill = (TransportBillVO) dao.retrieveByPK(
+                TransportBillVO.class, billVO.getPk_transport_bill());
+        if (oldBill != null && oldBill.getBill_status() != null
+                && oldBill.getBill_status() >= BILL_STATUS_CONFIRMED) {
+            ExceptionUtils.wrapBusinessException("联单已确认，不可重复确认");
         }
+
+        validateTransportTypeByConcentration(billVO.getPk_deicing_record(), billVO.getTransport_type());
 
         billVO.setBill_status(BILL_STATUS_CONFIRMED);
         billVO.setConfirm_person(SessionUtil.getUserId());
@@ -240,6 +378,8 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
         try {
             dao.updateVO(billVO);
 
+            lockRecycledVolume(billVO.getPk_deicing_record());
+
             addTransportTrace(billVO.getPk_deicing_record(), billVO.getPk_transport_bill(),
                     "联单确认", "外运单位已确认转运联单，回收量已锁定");
 
@@ -247,6 +387,44 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
             ExceptionUtils.wrapBusinessException("确认外运联单失败");
         }
         return billVO;
+    }
+
+    private void lockRecycledVolume(String recordId) throws BusinessException {
+        if (StringUtils.isEmpty(recordId)) {
+            return;
+        }
+        try {
+            DeicingRecordVO recordVO = (DeicingRecordVO) dao.retrieveByPK(
+                    DeicingRecordVO.class, recordId);
+            if (recordVO != null) {
+                recordVO.setRecord_status(3);
+                recordVO.setStatus(VOStatus.UPDATED);
+                fillAuditFields(recordVO, false);
+                dao.updateVO(recordVO);
+            }
+        } catch (DAOException e) {
+            ExceptionUtils.wrapBusinessException("锁定回收量失败");
+        }
+    }
+
+    @Override
+    public void validateTransportTypeByConcentration(String recordId, Integer transportType) throws BusinessException {
+        if (StringUtils.isEmpty(recordId) || transportType == null) {
+            return;
+        }
+
+        ConcentrationTestVO testVO = getLatestConcentrationTest(recordId);
+        if (testVO != null && testVO.getIs_over_limit() != null && testVO.getIs_over_limit() == 1) {
+            if (transportType == TRANSPORT_TYPE_NORMAL) {
+                ExceptionUtils.wrapBusinessException(
+                        "浓度超限，不能按普通废水外运，请选择危废处置或再处理方式");
+            }
+            if (transportType != TRANSPORT_TYPE_HAZARDOUS
+                    && transportType != TRANSPORT_TYPE_RETREATMENT) {
+                ExceptionUtils.wrapBusinessException(
+                        "浓度超限，只能选择危废处置或再处理方式");
+            }
+        }
     }
 
     @Override
@@ -269,6 +447,7 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
         }
 
         if (recordVO.getIs_recycled() == 0) {
+            validateUnrecycledType(recordVO);
             if (StringUtils.isEmpty(recordVO.getUnrecycled_reason())) {
                 ExceptionUtils.wrapBusinessException("未回收的架次必须填写原因说明");
             }
@@ -281,6 +460,19 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
             if (StringUtils.isEmpty(recordVO.getPk_recycling_pool())) {
                 ExceptionUtils.wrapBusinessException("请选择回收池");
             }
+        }
+    }
+
+    @Override
+    public void validateUnrecycledType(DeicingRecordVO recordVO) throws BusinessException {
+        if (recordVO.getUnrecycled_type() == null) {
+            ExceptionUtils.wrapBusinessException("请选择未回收原因分类");
+        }
+        int type = recordVO.getUnrecycled_type();
+        if (type != UNRECYCLED_TYPE_WEATHER
+                && type != UNRECYCLED_TYPE_APRON
+                && type != UNRECYCLED_TYPE_EQUIPMENT) {
+            ExceptionUtils.wrapBusinessException("未回收原因分类不正确，只能选择天气、机位或设备故障");
         }
     }
 
@@ -415,22 +607,6 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
         return 1;
     }
 
-    private void checkBillConfirmed(String recordId) throws BusinessException {
-        try {
-            String condition = "pk_deicing_record = ? and bill_status = ? and dr = 0";
-            SQLParameter param = new SQLParameter();
-            param.addParam(recordId);
-            param.addParam(BILL_STATUS_CONFIRMED);
-
-            Collection<TransportBillVO> bills = dao.retrieveByClause(TransportBillVO.class, condition, param);
-            if (CollectionUtils.isNotEmpty(bills)) {
-                ExceptionUtils.wrapBusinessException("外运联单已确认，回收量不可修改");
-            }
-        } catch (DAOException e) {
-            ExceptionUtils.wrapBusinessException("校验联单状态失败");
-        }
-    }
-
     private ConcentrationTestVO getLatestConcentrationTest(String recordId) {
         try {
             String condition = "pk_deicing_record = ? and dr = 0 order by test_time desc";
@@ -466,6 +642,44 @@ public class DeicingRecordServiceImpl implements IDeicingRecordService {
             ExceptionUtils.wrapBusinessException("查询回收池列表失败");
         }
         return new RecyclingPoolVO[0];
+    }
+
+    @Override
+    public BillPoolVO[] queryBillPools(String billId) throws BusinessException {
+        if (StringUtils.isEmpty(billId)) {
+            return new BillPoolVO[0];
+        }
+
+        try {
+            String condition = "pk_transport_bill = ? and dr = 0 order by creationtime asc";
+            SQLParameter param = new SQLParameter();
+            param.addParam(billId);
+
+            Collection<BillPoolVO> pools = dao.retrieveByClause(BillPoolVO.class, condition, param);
+            if (CollectionUtils.isEmpty(pools)) {
+                return new BillPoolVO[0];
+            }
+            return pools.toArray(new BillPoolVO[0]);
+        } catch (DAOException e) {
+            ExceptionUtils.wrapBusinessException("查询联单来源池明细失败");
+        }
+        return new BillPoolVO[0];
+    }
+
+    private void checkBillConfirmed(String recordId) throws BusinessException {
+        try {
+            String condition = "pk_deicing_record = ? and bill_status >= ? and dr = 0";
+            SQLParameter param = new SQLParameter();
+            param.addParam(recordId);
+            param.addParam(BILL_STATUS_CONFIRMED);
+
+            Collection<TransportBillVO> bills = dao.retrieveByClause(TransportBillVO.class, condition, param);
+            if (CollectionUtils.isNotEmpty(bills)) {
+                ExceptionUtils.wrapBusinessException("外运联单已确认，回收量不可修改");
+            }
+        } catch (DAOException e) {
+            ExceptionUtils.wrapBusinessException("校验联单状态失败");
+        }
     }
 
     private void fillAuditFields(nc.vo.pub.SuperVO vo, boolean isNew) {

@@ -41,6 +41,11 @@ public class TransportBillVO extends SuperVO {
     public static final String TRANSPORT_VOLUME = "transport_volume";
     public static final String BILL_STATUS = "bill_status";
     public static final String CONFIRM_TIME = "confirm_time";
+    public static final String TRANSPORT_TYPE = "transport_type";
+    
+    public static final int TRANSPORT_TYPE_NORMAL = 1;
+    public static final int TRANSPORT_TYPE_HAZARDOUS = 2;
+    public static final int TRANSPORT_TYPE_RETREATMENT = 3;
 
     @Override
     public String getTableName() {

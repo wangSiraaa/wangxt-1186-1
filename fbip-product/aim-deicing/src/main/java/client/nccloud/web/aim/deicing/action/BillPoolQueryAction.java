@@ -8,13 +8,10 @@ import nccloud.framework.web.container.IRequest;
 import nccloud.framework.web.json.JsonFactory;
 import nccloud.web.aim.deicing.itf.IDeicingRecordService;
 import nccloud.web.aim.deicing.vo.BillPoolVO;
-import nccloud.web.aim.deicing.vo.TransportBillVO;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
-public class TransportBillSaveAction implements ICommonAction {
+public class BillPoolQueryAction implements ICommonAction {
 
     @Override
     public Object doAction(IRequest request) {
@@ -23,21 +20,13 @@ public class TransportBillSaveAction implements ICommonAction {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = json.fromJson(request.read(), Map.class);
 
-            String billData = map != null ? (String) map.get("billData") : null;
-            if (billData == null || billData.isEmpty()) {
-                ExceptionUtils.wrapBusinessException("联单数据不能为空");
-            }
-
-            TransportBillVO billVO = json.fromJson(billData, TransportBillVO.class);
-
-            BillPoolVO[] poolVOs = null;
-            String poolData = map != null ? (String) map.get("poolData") : null;
-            if (poolData != null && !poolData.isEmpty()) {
-                poolVOs = json.fromJson(poolData, BillPoolVO[].class);
+            String billId = map != null ? (String) map.get("billId") : null;
+            if (billId == null || billId.isEmpty()) {
+                ExceptionUtils.wrapBusinessException("联单主键不能为空");
             }
 
             IDeicingRecordService service = ServiceLocator.find(IDeicingRecordService.class);
-            TransportBillVO result = service.saveTransportBill(billVO, poolVOs);
+            BillPoolVO[] result = service.queryBillPools(billId);
 
             return result;
         } catch (Exception e) {
